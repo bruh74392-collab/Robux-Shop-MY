@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>RobuxMY – Elite Master Shop</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/tesseract.js@v4.0.1/dist/tesseract.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet"/>
+<style>
+:root{--neon-cyan:#00f5ff;--neon-violet:#a855f7;--bg-dark:#050608;--surface:rgba(10,12,16,0.8);--border:rgba(255,255,255,0.05);--gold:#fbbf24;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Space Grotesk',sans-serif;}
+body{background:var(--bg-dark);color:#e2e8f0;overflow-x:hidden;}
+.font-outfit{font-family:'Outfit',sans-serif;}
+.glass{background:rgba(10,12,16,0.7);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--border);}
+.glass-card{background:rgba(15,18,24,0.6);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);border:1px solid var(--border);transition:all 0.5s cubic-bezier(0.19,1,0.22,1);}
+.glass-card:hover{border-color:rgba(0,245,255,0.2);transform:translateY(-8px);box-shadow:0 30px 60px rgba(0,0,0,0.6);}
+.text-cyan-glow{color:var(--neon-cyan);text-shadow:0 0 15px rgba(0,245,255,0.5);}
+.bg-cyan-glow{background:var(--neon-cyan);box-shadow:0 0 30px rgba(0,245,255,0.5);}
+.bg-gold-glow{background:var(--gold);box-shadow:0 0 30px rgba(251,191,36,0.6);}
+@keyframes mesh-move {0% { transform: translate(0, 0); }50% { transform: translate(-3%, 3%); }100% { transform: translate(0, 0); }}
+.bg-mesh{position:fixed;inset:0;z-index:0;pointer-events:none;background: radial-gradient(circle at 20% 20%, rgba(0,245,255,0.08) 0%, transparent 40%), radial-gradient(circle at 80% 80%, rgba(168,85,247,0.08) 0%, transparent 40%), radial-gradient(circle at 50% 50%, rgba(5,6,8,1) 0%, #000 100%);animation: mesh-move 20s infinite ease-in-out;}
+/* Stability fix: removed heavy noise filter */
+@keyframes pulse-gold{0%,100%{transform:scale(1);box-shadow:0 0 25px rgba(251,191,36,0.6);}50%{transform:scale(1.05);box-shadow:0 0 45px rgba(251,191,36,0.8);}}
+.animate-pulse-gold{animation:pulse-gold 2s infinite ease-in-out;}
+@keyframes slide-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.animate-slide-up{animation:slide-up 0.5s cubic-bezier(0.19,1,0.22,1);}
+.hide-scrollbar::-webkit-scrollbar{display:none;}
+.capsule-tabs{background:rgba(10,12,16,0.8);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:100px;padding:6px;}
+.capsule-btn{padding:10px 20px;border-radius:100px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.05em;transition:all 0.3s;}
+.capsule-btn.active{background:var(--neon-cyan);color:#000;box-shadow:0 0 15px rgba(0,245,255,0.4);}
+.scan-line {position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--neon-cyan); box-shadow: 0 0 15px var(--neon-cyan); animation: scan 2s linear infinite;}
+@keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+/* --- Assist Loop Chat --- */
+.al-fab{position:fixed;bottom:160px;right:24px;z-index:900;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#00f5ff,#a855f7);box-shadow:0 0 24px rgba(0,245,255,0.6),0 0 48px rgba(168,85,247,0.3);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.3s;}
+.al-fab:hover{transform:scale(1.1);box-shadow:0 0 36px rgba(0,245,255,0.8),0 0 64px rgba(168,85,247,0.5);}
+.al-fab svg{width:26px;height:26px;color:#000;}
+.al-win{position:fixed;bottom:232px;right:24px;z-index:901;width:330px;max-height:480px;display:flex;flex-direction:column;background:rgba(5,6,8,0.97);border:1px solid rgba(0,245,255,0.25);border-radius:28px;box-shadow:0 0 60px rgba(0,245,255,0.15),0 20px 60px rgba(0,0,0,0.8);backdrop-filter:blur(32px);overflow:hidden;animation:al-pop 0.3s cubic-bezier(0.19,1,0.22,1);}
+@keyframes al-pop{from{transform:scale(0.85) translateY(20px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
+.al-header{background:linear-gradient(135deg,rgba(0,245,255,0.1),rgba(168,85,247,0.1));padding:16px 20px;border-bottom:1px solid rgba(0,245,255,0.1);display:flex;align-items:center;gap:12px;}
+.al-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#00f5ff,#a855f7);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:#000;box-shadow:0 0 16px rgba(0,245,255,0.5);flex-shrink:0;}
+.al-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.al-msgs::-webkit-scrollbar{width:4px;}
+.al-msgs::-webkit-scrollbar-thumb{background:rgba(0,245,255,0.2);border-radius:4px;}
+.al-bubble{max-width:85%;padding:10px 14px;border-radius:18px;font-size:12px;font-weight:700;line-height:1.5;}
+.al-bubble.bot{background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.15);color:#e2e8f0;align-self:flex-start;border-bottom-left-radius:4px;}
+.al-bubble.user{background:linear-gradient(135deg,rgba(0,245,255,0.2),rgba(168,85,247,0.2));border:1px solid rgba(0,245,255,0.2);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+.al-input-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid rgba(0,245,255,0.08);background:rgba(0,0,0,0.4);}
+.al-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(0,245,255,0.15);border-radius:16px;padding:10px 14px;color:#e2e8f0;font-size:12px;font-weight:700;outline:none;font-family:'Space Grotesk',sans-serif;}
+.al-input::placeholder{color:rgba(148,163,184,0.4);}
+.al-input:focus{border-color:rgba(0,245,255,0.4);box-shadow:0 0 12px rgba(0,245,255,0.1);}
+.al-send{background:linear-gradient(135deg,#00f5ff,#a855f7);border:none;border-radius:14px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;box-shadow:0 0 12px rgba(0,245,255,0.3);transition:transform 0.2s;}
+.al-send:hover{transform:scale(1.1);}
+.al-send svg{width:16px;height:16px;color:#000;}
+</style>
+</head>
+<body class="hide-scrollbar">
+<div class="bg-mesh"></div>
+<div id="root" class="relative z-10"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useMemo } = React;
+const SUPABASE_URL = "https://cjlngrnthusygfukxluw.supabase.co"; 
+const SUPABASE_KEY = "sb_publishable_RC_JFTjd6ZSg98DA3N2XbQ_7QPiBu8q"; 
+const WA_PHONE = "601110972302";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const hashStr = (s) => {
+  let h = 0;
+  for(let i=0; i<s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i) | 0;
+  return Math.abs(h).toString(36).toUpperCase();
+};
+
+const sha256 = async (message) => {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
+const getFingerprint = () => {
+  const parts = [navigator.userAgent, screen.width, screen.height, navigator.language, window.devicePixelRatio];
+  return hashStr(parts.join('|'));
+};
+
+const NameGate = ({ onConfirm }) => {
+  const [name, setName] = useState('');
+  return (
+    <div className="fixed inset-0 z-[500] bg-black/98 backdrop-blur-3xl flex items-center justify-center p-6 animate-in fade-in duration-700">
+      <div className="glass-card max-w-sm w-full p-10 rounded-[48px] text-center space-y-8 border-cyan-500/20 shadow-[0_0_80px_rgba(0,245,255,0.15)]">
+        <div className="w-20 h-20 rounded-[32px] bg-cyan-glow flex items-center justify-center mx-auto text-black text-4xl font-black shadow-[0_0_30px_rgba(0,245,255,0.5)]">S</div>
+        <div className="space-y-2">
+          <h2 className="text-3xl font-black font-outfit text-white uppercase italic tracking-tighter">Welcome</h2>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Enter your name to continue</p>
+        </div>
+        <input
+          type="text"
+          placeholder="YOUR NAME"
+          autoFocus
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && name.trim() && onConfirm(name.trim())}
+          className="w-full bg-black/60 border-2 border-white/5 rounded-3xl p-5 text-center text-xl font-black text-cyan-400 outline-none focus:border-cyan-500/40 transition-all tracking-wide placeholder:text-slate-800"
+        />
+        <button
+          onClick={() => name.trim() && onConfirm(name.trim())}
+          className="w-full bg-cyan-glow text-black py-5 rounded-[28px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-2xl active:scale-95"
+        >
+          Enter Shop
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const Shop = ({ customAmount, setCustomAmount, WA_PHONE }) => (
+  <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="text-center space-y-2 py-4">
+      <h2 className="text-4xl font-black font-outfit text-white uppercase tracking-tighter italic">Cheapest <span className="text-cyan-glow">Robux</span></h2>
+      <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Instant delivery • RM 40 per 1,000 R$</p>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="glass-card rounded-[40px] p-8 relative overflow-hidden group">
+        <div className="absolute top-6 right-8 bg-cyan-500/10 text-cyan-400 text-[10px] font-black px-4 py-1.5 rounded-full border border-cyan-500/20">STARTER</div>
+        <div className="space-y-1 mb-8">
+          <h3 className="text-5xl font-black font-outfit text-white leading-none">500 <span className="text-xl text-slate-500">R$</span></h3>
+          <p className="text-2xl font-black font-outfit text-cyan-400 mt-2">RM 25</p>
+        </div>
+        <div className="bg-black/40 rounded-3xl p-5 border border-white/5 mb-8">
+          <p className="text-[10px] font-bold text-slate-600 uppercase mb-2">Gamepass Price:</p>
+          <p className="text-2xl font-black text-white font-outfit">715 <span className="text-xs text-slate-600">R$</span></p>
+        </div>
+        <button onClick={() => window.open(`https://wa.me/${WA_PHONE}?text=Buy 500 Robux RM 25`)} className="w-full bg-violet-600/10 text-violet-400 py-5 rounded-3xl font-black uppercase tracking-tighter border border-violet-500/30 hover:bg-violet-600 hover:text-white transition-all shadow-xl active:scale-95">Buy via WhatsApp</button>
+      </div>
+      <div className="glass-card rounded-[40px] p-8 relative overflow-hidden border-cyan-500/30 shadow-[0_0_50px_rgba(0,245,255,0.15)] bg-cyan-900/5">
+        <div className="absolute top-6 right-8 bg-cyan-glow text-black text-[10px] font-black px-4 py-1.5 rounded-full shadow-[0_0_20px_#00f5ff]">POPULAR</div>
+        <div className="space-y-1 mb-8">
+          <h3 className="text-5xl font-black font-outfit text-white leading-none">1K <span className="text-xl text-slate-500">R$</span></h3>
+          <p className="text-2xl font-black font-outfit text-cyan-glow mt-2">RM 40</p>
+        </div>
+        <div className="bg-black/40 rounded-3xl p-5 border border-white/5 mb-8">
+          <p className="text-[10px] font-bold text-slate-600 uppercase mb-2">Gamepass Price:</p>
+          <p className="text-2xl font-black text-white font-outfit">1,429 <span className="text-xs text-slate-600">R$</span></p>
+        </div>
+        <button onClick={() => window.open(`https://wa.me/${WA_PHONE}?text=Buy 1000 Robux RM 40`)} className="w-full bg-cyan-glow text-black py-5 rounded-3xl font-black uppercase tracking-tighter hover:scale-[1.02] transition-all shadow-2xl active:scale-95">Buy via WhatsApp</button>
+      </div>
+    </div>
+    <div className="glass-card rounded-[40px] p-8">
+      <h3 className="text-sm font-black text-white uppercase tracking-widest mb-8 text-center flex items-center justify-center gap-4 animate-pulse">
+         <div className="h-px w-8 bg-slate-800"></div> Calculator <div className="h-px w-8 bg-slate-800"></div>
+      </h3>
+      <div className="max-w-md mx-auto space-y-6">
+        <div className="relative group">
+          <input 
+            type="number" 
+            placeholder="e.g. 2000" 
+            value={customAmount} 
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "" || (Number(val) >= 0 && Number.isInteger(Number(val)))) {
+                setCustomAmount(val);
+              }
+            }} 
+            className="w-full bg-black/40 border-2 border-white/5 rounded-3xl p-6 text-2xl font-black text-white outline-none focus:border-cyan-500/40 transition-all font-outfit pr-20"
+          />
+          <span className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-700 font-black uppercase text-xs">Robux</span>
+        </div>
+        {customAmount && (
+          <div className="space-y-4 animate-in zoom-in-95 duration-500">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-slate-900/60 p-5 rounded-3xl border border-white/5 text-center">
+                <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Total Cost</p>
+                <p className="text-2xl font-black text-green-400 font-outfit">RM {(customAmount/1000*40).toFixed(2)}</p>
+              </div>
+              <div className="bg-slate-900/60 p-5 rounded-3xl border border-white/5 text-center border-cyan-500/20">
+                <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Pass Price</p>
+                <p className="text-2xl font-black text-cyan-400 font-outfit">{Math.ceil(customAmount/0.7).toLocaleString()}</p>
+              </div>
+            </div>
+            <button onClick={() => window.open(`https://wa.me/${WA_PHONE}?text=I want to buy ${customAmount} Robux for RM ${(customAmount/1000*40).toFixed(2)}. The Gamepass Price is ${Math.ceil(customAmount/0.7).toLocaleString()} R$.`)} className="w-full bg-cyan-glow text-black py-5 rounded-3xl font-black uppercase tracking-tighter hover:scale-[1.02] transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-3">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 11-7.6-11.7 8.38 8.38 0 013.8.9L21 3z"/></svg>
+              Buy {customAmount} Robux via WhatsApp
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+const HowTo = () => (
+  <div className="space-y-6 animate-in fade-in duration-700">
+    <h2 className="text-2xl font-black font-outfit text-white uppercase tracking-tighter italic mb-10 border-l-4 border-cyan-500 pl-6">Mission <span className="text-cyan-glow">Briefing</span></h2>
+    <div className="grid gap-4">
+      {[
+        { icon: "01", t: "Create Gamepass", d: "Open Roblox Create Dashboard and generate a new Gamepass under your experience." },
+        { icon: "02", t: "Configure Price", d: "Set the price according to our calculator (Roblox takes 30% tax)." },
+        { icon: "03", t: "Secure Checkout", d: "Message us on WhatsApp with your Link and Username to verify order." },
+        { icon: "04", t: "Elite Delivery", d: "Robux are typically delivered within minutes of payment verification." }
+      ].map((s) => (
+        <div key={s.icon} className="glass-card p-6 rounded-[32px] flex items-center gap-6 border-white/5 group">
+          <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-xl font-black text-slate-700 group-hover:text-cyan-400 group-hover:bg-cyan-500/10 transition-all font-outfit">{s.icon}</div>
+          <div>
+            <h4 className="font-black font-outfit text-white uppercase italic text-sm tracking-tight">{s.t}</h4>
+            <p className="text-[11px] text-slate-500 leading-relaxed mt-1 font-bold">{s.d}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const VipBriefing = ({ setShowVipBriefing }) => (
+  <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-3xl flex items-center justify-center p-4 animate-in fade-in duration-500">
+    <div className="glass-card max-w-sm w-full p-8 rounded-[40px] text-center space-y-6 border-gold/30 shadow-[0_0_100px_rgba(251,191,36,0.2)] max-h-[90vh] overflow-y-auto hide-scrollbar">
+      <div className="w-16 h-16 bg-gold-glow rounded-[28px] flex items-center justify-center mx-auto text-black shadow-[0_0_40px_rgba(251,191,36,0.4)] shrink-0">
+        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <div className="space-y-4">
+        <h2 className="text-3xl font-black font-outfit text-white uppercase italic tracking-tighter">VIP MISSION BRIEFING</h2>
+        <div className="h-1 w-12 bg-gold mx-auto rounded-full"></div>
+        <p className="text-xs font-bold text-slate-300 leading-relaxed uppercase">You must refer <span className="text-gold">20 people</span> to buy <span className="text-gold font-black">500 Robux or more</span> to be eligible for 1 Referral Credit. <br/>Proof must show recipient: <span className="text-gold">DAYVEN FAN BU XUEN</span></p>
+      </div>
+      <button onClick={() => setShowVipBriefing(false)} className="w-full bg-[#fbbf24] text-black py-5 rounded-[28px] font-black uppercase tracking-widest hover:scale-[1.05] transition-all shadow-2xl active:scale-95 text-xs">OK</button>
+    </div>
+  </div>
+);
+
+
+
+const VIPDashboard = ({ referrals, redeemedCount, showVipBriefing, setShowVipBriefing, scanning, handleProofUpload, addToast }) => (
+  <div className="space-y-6 animate-in fade-in duration-700 pb-20">
+    {showVipBriefing && <VipBriefing setShowVipBriefing={setShowVipBriefing} />}
+    <div className="flex items-center justify-between mb-2">
+      <h2 className="text-xl font-black font-outfit text-gold tracking-tighter uppercase italic">GLOBAL VIP ACCESS</h2>
+      <div className="flex items-center gap-2 bg-slate-800/80 px-4 py-2 rounded-full border border-gold/10 shadow-[0_0_20px_rgba(251,191,36,0.1)]">
+        <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></div>
+        <span className="text-[11px] font-black uppercase text-amber-400">Slots: {10 - redeemedCount}/10</span>
+      </div>
+    </div>
+    <div className="glass-card rounded-[40px] p-2 bg-red-600/5 border-red-500/20">
+       <div className="flex items-center gap-4 p-4">
+          <div className="w-10 h-10 bg-red-600/20 text-red-500 rounded-2xl flex items-center justify-center shrink-0">
+             <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <p className="text-[10px] font-black text-red-500 uppercase tracking-widest leading-relaxed">WARNING: Payment remarks MUST include the Robux amount (e.g. "1000 Robux") and recipient must be "DAYVEN FAN BU XUEN" or the referral will NOT be eligible.</p>
+       </div>
+    </div>
+    <div className="glass-card rounded-[40px] p-8 border-gold/20 shadow-[0_0_60px_rgba(251,191,36,0.1)] relative overflow-hidden group">
+      <div className="absolute top-0 left-0 w-full h-1 bg-white/5"><div className="h-full bg-gold transition-all duration-1000 shadow-[0_0_20px_#fbbf24]" style={{ width: `${(referrals/20)*100}%` }}></div></div>
+      <div className="flex items-center justify-between mb-8">
+        <div className="space-y-1">
+          <h3 className="text-4xl font-black font-outfit text-white leading-none italic">{referrals}<span className="text-slate-700 text-xl font-medium">/20</span></h3>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-2">Verified Referrals</p>
+        </div>
+      </div>
+      <button onClick={() => { if(referrals>=20 && redeemedCount<10) addToast("CLAIMING ROBUX..."); }} className={`w-full py-5 rounded-[28px] font-black uppercase tracking-tighter transition-all shadow-2xl text-sm ${referrals >= 20 && redeemedCount < 10 ? 'bg-amber-400 text-black animate-pulse-gold' : 'bg-slate-800 text-slate-600 cursor-not-allowed opacity-40 border border-white/5'}`}>{redeemedCount >= 10 ? 'PERIOD OVER (0 SLOTS)' : referrals >= 20 ? 'REDEEM YOUR 1,000 ROBUX' : `NEED ${20-referrals} MORE REFERRALS`}</button>
+    </div>
+    <div className="glass rounded-[32px] p-6 border-cyan-500/10">
+      <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-3 mb-6"><div className="w-10 h-10 rounded-2xl bg-cyan-400/5 flex items-center justify-center text-cyan-400 border border-cyan-400/10"><svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>AI Scan verification</h3>
+      <div className="relative h-48 rounded-[32px] border-2 border-dashed border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-all cursor-pointer flex flex-col items-center justify-center group overflow-hidden">
+        {scanning && <div className="scan-line"></div>}
+        <div className={`w-14 h-14 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center mb-4 transition-colors ${scanning?'bg-cyan-400/10 text-cyan-400 animate-pulse':'text-slate-700 group-hover:text-cyan-400'}`}><svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/></svg></div>
+        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-loose">{scanning?'Analyzing Proof...':'Select Referral Screenshot'}</span>
+        <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleProofUpload} />
+      </div>
+    </div>
+  </div>
+);
+
+const PasswordModal = ({ type, onClose, onSuccess, addToast }) => {
+  const [password, setPassword] = useState('');
+  const handleVerify = () => {
+    const correct = type === 'admin' ? "elite2026" : "worker2026";
+    if (password === correct) {
+      onSuccess();
+      onClose();
+      addToast(`GRANTED ${type.toUpperCase()} ACCESS`);
+    } else {
+      addToast("INCORRECT PASSWORD", "error");
+    }
+  };
+  return (
+    <div className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-300">
+      <div className="glass-card max-w-sm w-full p-8 rounded-[40px] border-cyan-500/20 shadow-[0_0_80px_rgba(0,245,255,0.1)] space-y-6">
+        <div className="text-center space-y-2">
+          <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-cyan-500/20 text-cyan-400">
+             <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h3 className="text-2xl font-black font-outfit text-white uppercase italic tracking-tighter">{type.toUpperCase()} ACCESS</h3>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Identify Yourself</p>
+        </div>
+        <input 
+          type="password" 
+          placeholder="ENTER PASSCODE" 
+          autoFocus 
+          value={password} 
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
+          className="w-full bg-black/60 border-2 border-white/5 rounded-3xl p-5 text-center text-xl font-black text-cyan-400 outline-none focus:border-cyan-500/40 transition-all tracking-widest placeholder:text-slate-800"
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <button onClick={onClose} className="py-4 bg-white/5 text-slate-500 rounded-2xl font-black uppercase text-[10px] hover:bg-white/10 transition-all">Cancel</button>
+          <button onClick={handleVerify} className="py-4 bg-cyan-glow text-black rounded-2xl font-black uppercase text-[10px] shadow-lg hover:scale-[1.02] transition-all">Verify</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const WorkerPanel = ({ fp, addToast, setWorkerView }) => {
+  const [traffic, setTraffic] = useState([]);
+  const [proofFile, setProofFile] = useState(null);
+  const [remark, setRemark] = useState('');
+  const [txNote, setTxNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [workerTx, setWorkerTx] = useState([]);
+
+  useEffect(() => {
+    const fetchTraffic = async () => {
+      const { data } = await supabaseClient.from('visitors').select('fingerprint, last_seen').order('last_seen', { ascending: false }).limit(15);
+      if(data) setTraffic(data);
+    };
+    fetchTraffic();
+    const fetchWorkerTx = async () => {
+      const { data } = await supabaseClient.from('worker_submissions').select('*').eq('worker_fp', fp).order('created_at', { ascending: false });
+      if(data) setWorkerTx(data);
+    };
+    fetchWorkerTx();
+    const sub = supabaseClient.channel('worker_updates').on('postgres_changes', { event: '*', schema: 'public', table: 'visitors' }, fetchTraffic).subscribe();
+    return () => { sub.unsubscribe(); };
+  }, [fp]);
+
+  const handleSubmitProof = async () => {
+    if (!proofFile) return addToast('Please upload proof of transaction', 'error');
+    if (!remark) return addToast('Please select a transaction remark', 'error');
+    if (!txNote.trim()) return addToast('Please add a transaction note', 'error');
+    setSubmitting(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = ev.target.result.split(',')[1];
+        const fileName = `proof_${fp}_${Date.now()}.${proofFile.name.split('.').pop()}`;
+        await supabaseClient.from('worker_submissions').insert({
+          worker_fp: fp,
+          remark,
+          note: txNote.trim(),
+          proof_name: fileName,
+          proof_data: base64,
+          created_at: new Date().toISOString(),
+          deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+          compliant: true
+        });
+        setProofFile(null);
+        setRemark('');
+        setTxNote('');
+        addToast('Submission Logged ✓');
+        setSubmitting(false);
+      };
+      reader.readAsDataURL(proofFile);
+    } catch(e) {
+      addToast('Submission failed', 'error');
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-[100] h-[85vh] bg-black/95 backdrop-blur-3xl border-t border-amber-500/20 rounded-t-[40px] shadow-[0_-20px_50px_rgba(0,0,0,0.8)] animate-slide-up flex flex-col">
+      <div className="flex items-center justify-between p-8 border-b border-white/5">
+        <div><h2 className="text-2xl font-black font-outfit text-white uppercase italic tracking-tighter">Worker HQ</h2><p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1">Live Monitor • Total: {traffic.length}</p></div>
+        <button onClick={() => setWorkerView(false)} className="bg-white/5 hover:bg-white/10 p-4 rounded-3xl text-white"><svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-6 space-y-5 hide-scrollbar">
+        <div className="grid grid-cols-2 gap-4 mb-2">
+           <div className="glass-card p-6 rounded-3xl border-white/5 text-center">
+              <p className="text-[9px] font-black text-slate-500 uppercase mb-1">SYSTEM</p>
+              <p className="text-sm font-black text-green-400 font-outfit">ONLINE</p>
+           </div>
+           <div className="glass-card p-6 rounded-3xl border-white/5 text-center">
+              <p className="text-[9px] font-black text-slate-500 uppercase mb-1">QUEUE</p>
+              <p className="text-sm font-black text-amber-400 font-outfit">IDLE</p>
+           </div>
+        </div>
+
+        {/* Proof Submission Section */}
+        <div className="glass-card p-6 rounded-[32px] border-amber-500/20 space-y-4">
+          <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">📋 Submit Transaction Proof</p>
+          <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-3">
+            <p className="text-[9px] font-black text-amber-500 uppercase tracking-wider leading-relaxed">⚠️ WARNING: You must submit proof within 3 days of logging a profit. Failure will result in a permanent site ban.</p>
+          </div>
+          {/* Proof Upload */}
+          <div className="relative h-28 rounded-2xl border-2 border-dashed border-white/10 bg-white/[0.01] hover:bg-white/[0.03] transition-all cursor-pointer flex flex-col items-center justify-center overflow-hidden">
+            <svg className="w-6 h-6 text-slate-600 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/></svg>
+            <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{proofFile ? proofFile.name : 'Upload Proof of Transaction'}</span>
+            {proofFile && <span className="text-[8px] text-cyan-400 font-bold mt-1">✓ File Ready</span>}
+            <input type="file" accept="image/*,.pdf" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => setProofFile(e.target.files[0])} />
+          </div>
+          {/* Remark Select */}
+          <select value={remark} onChange={e => setRemark(e.target.value)} className="w-full bg-black/60 border border-white/10 rounded-2xl p-3 text-[11px] font-black text-white outline-none focus:border-cyan-500/40 transition-all" style={{color: remark ? '#fff' : 'rgb(100,116,139)'}}>
+            <option value="" disabled hidden style={{color:'rgb(100,116,139)'}}>Select Remark Type...</option>
+            <option value="Buyer's transaction">Buyer's transaction</option>
+            <option value="Seller's transaction">Seller's transaction</option>
+            <option value="My transaction">My transaction</option>
+          </select>
+          {/* Note */}
+          <input placeholder="Transaction note (e.g. RM40 for 1000 Robux)" value={txNote} onChange={e => setTxNote(e.target.value)} className="w-full bg-black/60 border border-white/10 rounded-2xl p-3 text-[11px] font-black text-white outline-none placeholder:text-slate-700 focus:border-cyan-500/40 transition-all"/>
+          <button onClick={handleSubmitProof} disabled={submitting} className="w-full bg-amber-500/10 text-amber-400 border border-amber-500/30 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-500/20 transition-all disabled:opacity-40">{submitting ? 'Submitting...' : 'Submit Proof'}</button>
+        </div>
+
+        {/* Past Submissions */}
+        {workerTx.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2">Past Submissions</h3>
+            {workerTx.map((tx, i) => (
+              <div key={i} className="glass-card p-4 rounded-[24px] border-white/5 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-cyan-400">{tx.remark}</p>
+                  <p className="text-[9px] text-slate-500">{tx.note}</p>
+                </div>
+                <p className="text-[8px] font-black text-slate-600">{tx.created_at ? new Date(tx.created_at).toLocaleDateString() : '—'}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2">Recent Visitors</h3>
+        {traffic.map(v => (
+          <div key={v.fingerprint} className="glass-card p-5 rounded-[28px] border-white/5 flex items-center justify-between">
+            <p className="text-[10px] font-mono text-cyan-400">{v.fingerprint.slice(0, 15)}...</p>
+            <p className="text-[9px] font-black text-slate-600">{new Date(v.last_seen).toLocaleTimeString()}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+
+const AdminPanel = ({ fp, addToast, setAdmin }) => {
+  const [adminTab, setAdminTab] = useState('traffic');
+  const [traffic, setTraffic] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [newTx, setNewTx] = useState({ seller: '', profit: '', buyer: '' });
+
+  useEffect(() => {
+    const fetchTraffic = async () => {
+      const { data } = await supabaseClient.from('visitors').select('*').order('last_seen', { ascending: false });
+      if(data) setTraffic(data);
+    };
+    fetchTraffic();
+    const sub = supabaseClient.channel('traffic_updates').on('postgres_changes', { event: '*', schema: 'public', table: 'visitors' }, fetchTraffic).subscribe();
+    return () => sub.unsubscribe();
+  }, [fp]);
+
+  useEffect(() => {
+    const fetchTx = async () => {
+      const { data } = await supabaseClient.from('transactions').select('*').order('created_at', { ascending: false });
+      if(data) setTransactions(data);
+    };
+    fetchTx();
+    const sub = supabaseClient.channel('tx_updates').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, p => setTransactions(curr => [p.new, ...curr])).subscribe();
+    return () => sub.unsubscribe();
+  }, []);
+
+  const [workerSubmissions, setWorkerSubmissions] = useState([]);
+  useEffect(() => {
+    const fetchSubs = async () => {
+      const { data } = await supabaseClient.from('worker_submissions').select('*').order('created_at', { ascending: false });
+      if(data) setWorkerSubmissions(data);
+    };
+    fetchSubs();
+  }, []);
+
+  const handleAction = async (targetFp, action, currentStrikes) => {
+    if(targetFp === fp) return addToast("SECURITY: SELF-BAN PROTECTED", "error");
+    const updates = action === 'ban' ? { banned: true } : action === 'unban' ? { banned: false, strikes: 0 } : { strikes: (currentStrikes || 0) + 1 };
+    const { error } = await supabaseClient.from('visitors').update(updates).eq('fingerprint', targetFp);
+    if(!error) addToast(`Done: ${action}`);
+  };
+
+  const handleBanWorker = async (targetFp, name) => {
+    if(targetFp === fp) return addToast("SELF-BAN PROTECTED", "error");
+    const { error } = await supabaseClient.from('visitors').update({ worker_blocked: true }).eq('fingerprint', targetFp);
+    if(!error) addToast(`Worker ${name} banned from Worker Page`, 'error');
+  };
+
+  const handleBanSite = async (targetFp, name) => {
+    if(targetFp === fp) return addToast("SELF-BAN PROTECTED", "error");
+    const { error } = await supabaseClient.from('visitors').update({ banned: true, worker_blocked: true }).eq('fingerprint', targetFp);
+    if(!error) addToast(`${name} permanently banned from site`, 'error');
+  };
+
+  const handleUnblockWorker = async (targetFp, name) => {
+    const { error } = await supabaseClient.from('visitors').update({ worker_blocked: false }).eq('fingerprint', targetFp);
+    if(!error) addToast(`Worker ${name} Unblocked`, 'success');
+  };
+
+  const handleAddTx = async () => {
+    if(!newTx.seller.trim() || !newTx.buyer.trim()) return addToast('Fill all fields', 'error');
+    const profitNum = parseFloat(newTx.profit) || 0;
+    await supabaseClient.from('transactions').insert({ seller: newTx.seller.trim(), profit: profitNum, buyer: newTx.buyer.trim(), created_at: new Date().toISOString() });
+    setNewTx({ seller: '', profit: '', buyer: '' });
+    addToast('Transaction Logged');
+  };
+
+  const tabs = [{ id: 'traffic', label: 'Traffic' }, { id: 'transactions', label: 'Transactions' }, { id: 'workers', label: 'Workers' }];
+  const totalProfit = transactions.reduce((s, t) => s + (t.profit || 0), 0);
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-[100] h-[90vh] bg-black/97 backdrop-blur-3xl border-t border-cyan-500/20 rounded-t-[40px] shadow-[0_-20px_50px_rgba(0,0,0,0.8)] animate-slide-up flex flex-col">
+      <div className="flex items-center justify-between px-8 pt-8 pb-4 border-b border-white/5 shrink-0">
+        <div><h2 className="text-2xl font-black font-outfit text-white uppercase italic tracking-tighter">Command Center</h2><p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1">Admin Access • Restricted</p></div>
+        <button onClick={() => setAdmin(false)} className="bg-white/5 hover:bg-white/10 p-4 rounded-3xl text-white"><svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      {/* Admin Tabs */}
+      <div className="flex gap-1 px-6 py-3 shrink-0">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setAdminTab(t.id)} className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${adminTab === t.id ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'bg-white/5 text-slate-600 border border-white/5'}`}>{t.label}</button>
+        ))}
+      </div>
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+
+        {/* TRAFFIC TAB */}
+        {adminTab === 'traffic' && (
+          <>
+            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest px-2">Live Visitors • {traffic.length} Total</p>
+            {traffic.map(v => (
+              <div key={v.fingerprint} className={`glass-card p-5 rounded-[28px] border-white/5 ${v.fingerprint === fp ? 'border-cyan-500/30' : ''}`}>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-black text-white">{v.display_name || '—'}</p>
+                    <p className="text-[10px] font-mono text-cyan-400/60">{v.fingerprint.slice(0, 12)}... {v.fingerprint === fp && <span className="text-cyan-400">(YOU)</span>}</p>
+                    <p className="text-[9px] font-black text-slate-600">{v.banned ? '🔴 BANNED' : `Strikes: ${v.strikes || 0}/3`}</p>
+                  </div>
+                  <div className="flex flex-col gap-2 items-end">
+                    <button onClick={() => handleAction(v.fingerprint, 'strike', v.strikes || 0)} className="bg-amber-500/10 text-amber-500 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase hover:bg-amber-500 hover:text-black">Strike</button>
+                    <button onClick={() => handleAction(v.fingerprint, v.banned ? 'unban' : 'ban', v.strikes)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase ${v.banned ? 'bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-black' : 'bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white'}`}>{v.banned ? 'Unban' : 'Ban'}</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* TRANSACTIONS TAB */}
+        {adminTab === 'transactions' && (
+          <>
+            <div className="glass-card rounded-[28px] p-5 border-cyan-500/10 space-y-3">
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Log New Transaction</p>
+              <div className="grid grid-cols-3 gap-2">
+                <input placeholder="Seller" value={newTx.seller} onChange={e => setNewTx(p => ({...p, seller: e.target.value}))} className="bg-black/60 border border-white/5 rounded-2xl p-3 text-[11px] font-black text-white outline-none placeholder:text-slate-700 focus:border-cyan-500/40"/>
+                <input placeholder="Profit (RM)" type="number" value={newTx.profit} onChange={e => setNewTx(p => ({...p, profit: e.target.value}))} className="bg-black/60 border border-white/5 rounded-2xl p-3 text-[11px] font-black text-white outline-none placeholder:text-slate-700 focus:border-cyan-500/40"/>
+                <input placeholder="Buyer" value={newTx.buyer} onChange={e => setNewTx(p => ({...p, buyer: e.target.value}))} className="bg-black/60 border border-white/5 rounded-2xl p-3 text-[11px] font-black text-white outline-none placeholder:text-slate-700 focus:border-cyan-500/40"/>
+              </div>
+              <button onClick={handleAddTx} className="w-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-cyan-500/20 transition-all">+ Log Transaction</button>
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1 glass-card rounded-[24px] p-4 text-center border-green-500/10">
+                <p className="text-[8px] font-black text-slate-600 uppercase">Total Profit</p>
+                <p className="text-xl font-black text-green-400 font-outfit">RM {totalProfit.toFixed(2)}</p>
+              </div>
+              <div className="flex-1 glass-card rounded-[24px] p-4 text-center border-cyan-500/10">
+                <p className="text-[8px] font-black text-slate-600 uppercase">Transactions</p>
+                <p className="text-xl font-black text-cyan-400 font-outfit">{transactions.length}</p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-[10px]">
+                <thead>
+                  <tr className="border-b border-white/5">
+                    <th className="text-left py-3 px-2 text-[9px] font-black text-slate-500 uppercase tracking-widest">Seller</th>
+                    <th className="text-left py-3 px-2 text-[9px] font-black text-slate-500 uppercase tracking-widest">Profit</th>
+                    <th className="text-left py-3 px-2 text-[9px] font-black text-slate-500 uppercase tracking-widest">Buyer</th>
+                    <th className="text-right py-3 px-2 text-[9px] font-black text-slate-500 uppercase tracking-widest">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.map((tx, i) => (
+                    <tr key={tx.id || i} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3 px-2 font-bold text-white">{tx.seller}</td>
+                      <td className="py-3 px-2 font-black text-green-400">RM {(tx.profit || 0).toFixed(2)}</td>
+                      <td className="py-3 px-2 font-bold text-cyan-400">{tx.buyer}</td>
+                      <td className="py-3 px-2 text-right text-slate-600">{tx.created_at ? new Date(tx.created_at).toLocaleDateString() : '—'}</td>
+                    </tr>
+                  ))}
+                  {transactions.length === 0 && (
+                    <tr><td colSpan="4" className="py-8 text-center text-slate-700 text-[10px] uppercase tracking-widest">No transactions yet</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* WORKERS TAB */}
+        {adminTab === 'workers' && (
+          <>
+            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest px-2">Worker Access Control</p>
+            {/* Compliance Warnings */}
+            {(() => {
+              const now = new Date();
+              const nonCompliant = traffic.filter(v => {
+                if (!v.is_worker) return false;
+                const subs = workerSubmissions.filter(s => s.worker_fp === v.fingerprint);
+                if (subs.length === 0) {
+                  const seen = new Date(v.last_seen);
+                  const daysDiff = (now - seen) / (1000 * 60 * 60 * 24);
+                  return daysDiff >= 2.5;
+                }
+                return false;
+              });
+              return nonCompliant.length > 0 ? (
+                <div className="glass-card p-4 rounded-[24px] border-red-500/30 bg-red-500/5 space-y-2">
+                  <p className="text-[9px] font-black text-red-400 uppercase tracking-widest">⚠️ Compliance Warning — Workers Near Deadline</p>
+                  {nonCompliant.map(v => (
+                    <div key={v.fingerprint} className="flex items-center justify-between">
+                      <p className="text-[9px] font-bold text-red-300">{v.display_name} — No submission yet</p>
+                      <button onClick={() => handleBanSite(v.fingerprint, v.display_name)} className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-[8px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">Auto-Ban</button>
+                    </div>
+                  ))}
+                </div>
+              ) : null;
+            })()}
+            {traffic.filter(v => v.is_worker || v.worker_blocked).map(v => {
+              const subs = workerSubmissions.filter(s => s.worker_fp === v.fingerprint);
+              return (
+                <div key={v.fingerprint} className={`glass-card p-5 rounded-[28px] border-white/5 space-y-3 ${v.worker_blocked ? 'border-red-500/20 bg-red-500/5' : ''}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-black text-white">{v.display_name}</p>
+                        {v.is_worker && <span className="bg-amber-500/20 text-amber-400 text-[8px] font-black px-2 py-0.5 rounded-full border border-amber-500/30">WORKER</span>}
+                      </div>
+                      <p className="text-[10px] font-mono text-slate-600">{v.fingerprint.slice(0, 12)}...</p>
+                      <p className={`text-[9px] font-black uppercase ${v.worker_blocked ? 'text-red-500' : 'text-green-500'}`}>{v.worker_blocked ? '🔴 Worker Blocked' : '🟢 Worker Active'} {v.banned ? '| 🚫 Site Banned' : ''}</p>
+                      <p className="text-[8px] text-slate-600">Submissions: {subs.length}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    {v.worker_blocked
+                      ? <button onClick={() => handleUnblockWorker(v.fingerprint, v.display_name)} className="flex-1 bg-green-500/10 text-green-400 px-3 py-2 rounded-xl text-[9px] font-black uppercase hover:bg-green-500 hover:text-black transition-all">Unblock Worker</button>
+                      : <button onClick={() => handleBanWorker(v.fingerprint, v.display_name)} className="flex-1 bg-orange-500/10 text-orange-400 px-3 py-2 rounded-xl text-[9px] font-black uppercase hover:bg-orange-500 hover:text-black transition-all">Ban from Worker</button>
+                    }
+                    <button onClick={() => handleBanSite(v.fingerprint, v.display_name)} className="flex-1 bg-red-500/10 text-red-400 px-3 py-2 rounded-xl text-[9px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">Ban from Site</button>
+                  </div>
+                </div>
+              );
+            })}
+            {traffic.filter(v => v.is_worker || v.worker_blocked).length === 0 && (
+              <div className="text-center py-12 text-slate-700 text-[10px] uppercase tracking-widest">No workers tagged yet</div>
+            )}
+          </>
+        )}
+
+      </div>
+    </div>
+  );
+};
+
+const Report = ({ fp, addToast }) => {
+  const [user, setUser] = useState('');
+  const [issue, setIssue] = useState('');
+  const [dispute, setDispute] = useState('');
+  const generateDispute = () => {
+    if (!user.trim() || !issue.trim()) return addToast("PLEASE FILL ALL FIELDS", "error");
+    const cleanUser = user.replace(/[<>]/g, "");
+    const cleanIssue = issue.replace(/[<>]/g, "");
+    const text = `⚠️ ROBUX DISPUTE CASE ⚠️\nUsername: ${cleanUser}\nIssue: ${cleanIssue}\nFP: ${fp}`;
+    setDispute(text);
+    addToast("Dispute Case Generated");
+  };
+  const sendToWhatsApp = () => {
+    if (!dispute) return addToast("Generate a dispute case first", "error");
+    const encoded = encodeURIComponent(dispute);
+    window.open(`https://wa.me/${WA_PHONE}?text=${encoded}`, '_blank');
+  };
+  return (
+    <div className="space-y-6 animate-in fade-in duration-700">
+      <h2 className="text-2xl font-black font-outfit text-white uppercase italic border-l-4 border-red-500 pl-6">Support <span className="text-red-500">Ticket</span></h2>
+      <div className="glass-card p-8 rounded-[40px] space-y-4">
+        <input placeholder="Roblox Username" value={user} onChange={(e) => setUser(e.target.value)} className="w-full bg-slate-900/50 border border-white/5 rounded-3xl p-5 text-sm font-black text-white outline-none"/>
+        <textarea placeholder="Tell us what happened..." value={issue} onChange={(e) => setIssue(e.target.value)} className="w-full h-32 bg-slate-900/50 border border-white/5 rounded-3xl p-5 text-sm font-black text-white outline-none resize-none"></textarea>
+        <button onClick={generateDispute} className="w-full bg-red-600/10 text-red-500 py-5 rounded-3xl font-black italic">Generate Dispute Case</button>
+      </div>
+      {dispute && (
+        <div className="glass-card p-6 rounded-[32px] space-y-4 animate-in zoom-in-95">
+          <pre className="text-[10px] font-mono text-slate-500 bg-black/60 p-5 rounded-3xl whitespace-pre-wrap">{dispute}</pre>
+          <div className="grid grid-cols-2 gap-3">
+            <button onClick={() => { navigator.clipboard.writeText(dispute); addToast("Copied!"); }} className="bg-white/5 text-white py-4 rounded-2xl text-[10px] font-black uppercase">Copy Case</button>
+            <button onClick={sendToWhatsApp} className="bg-green-500/10 text-green-400 border border-green-500/30 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 hover:bg-green-500/20 transition-all">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 11-7.6-11.7 8.38 8.38 0 013.8.9L21 3z"/></svg>
+              Send to WA
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ===== ASSIST LOOP AI CHAT ===== */
+const AL_RESPONSES = [
+  "Sure! For Robux purchases, simply pick a package and tap 'Buy via WhatsApp'. We deliver within minutes! 🎮",
+  "To create a gamepass, go to the Roblox Create Dashboard, click 'Create Gamepass' under your experience, and set the price from our calculator.",
+  "Payments are verified by our team after you send proof on WhatsApp. Delivery is usually within 15 minutes.",
+  "For disputes, head to the Safety tab, fill in your details, and send the case directly to our WhatsApp. We gotchu! 💪",
+  "VIP rewards require 20 verified referrals of 500R$ or more. Check the VIP tab for your progress!",
+  "Our prices are RM 40 per 1,000 Robux — the cheapest you'll find. Plus, Roblox takes a 30% cut so your gamepass price is higher.",
+  "Need help with something else? Our WhatsApp support button is at the bottom of the page. We're always online! 🟢",
+];
+const AssistLoop = () => {
+  const [open, setOpen] = useState(false);
+  const [msgs, setMsgs] = useState([{ from: 'bot', text: "Hello! I am Assist Loop, your Robux Shop manager. How can I help you today? 🤖" }]);
+  const [input, setInput] = useState('');
+  const msgsEndRef = React.useRef(null);
+  useEffect(() => { if(open && msgsEndRef.current) msgsEndRef.current.scrollIntoView({ behavior: 'smooth' }); }, [msgs, open]);
+  const send = () => {
+    const t = input.trim();
+    if (!t) return;
+    setMsgs(prev => [...prev, { from: 'user', text: t }]);
+    setInput('');
+    setTimeout(() => {
+      const reply = AL_RESPONSES[Math.floor(Math.random() * AL_RESPONSES.length)];
+      setMsgs(prev => [...prev, { from: 'bot', text: reply }]);
+    }, 700);
+  };
+  return (
+    <>
+      {open && (
+        <div className="al-win">
+          <div className="al-header">
+            <div className="al-avatar">AL</div>
+            <div>
+              <p style={{fontSize:'13px',fontWeight:900,color:'#fff',margin:0}}>Assist Loop</p>
+              <p style={{fontSize:'9px',fontWeight:700,color:'rgba(0,245,255,0.7)',textTransform:'uppercase',letterSpacing:'0.1em',margin:0}}>AI Manager • Online</p>
+            </div>
+            <button onClick={() => setOpen(false)} style={{marginLeft:'auto',background:'rgba(255,255,255,0.05)',border:'none',borderRadius:'12px',width:'32px',height:'32px',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#94a3b8'}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div className="al-msgs">
+            {msgs.map((m, i) => <div key={i} className={`al-bubble ${m.from}`}>{m.text}</div>)}
+            <div ref={msgsEndRef}/>
+          </div>
+          <div className="al-input-row">
+            <input className="al-input" placeholder="Ask Assist Loop..." value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()}/>
+            <button className="al-send" onClick={send}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      )}
+      <button className="al-fab" onClick={() => setOpen(p => !p)} title="Assist Loop AI">
+        {open
+          ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        }
+      </button>
+    </>
+  );
+};
+
+const App = () => {
+  const [view, setView] = useState('shop');
+  const [banned, setBanned] = useState(false);
+  const [workerBlocked, setWorkerBlocked] = useState(false);
+  const [userName, setUserName] = useState(() => localStorage.getItem('user_name') || '');
+  const [referrals, setReferrals] = useState(parseInt(localStorage.getItem('refs') || '0'));
+  const [redeemedCount, setRedeemedCount] = useState(0);
+  const [admin, setAdmin] = useState(false);
+  const [workerView, setWorkerView] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [toasts, setToasts] = useState([]);
+  const [customAmount, setCustomAmount] = useState('');
+  const [showVipBriefing, setShowVipBriefing] = useState(true);
+  const [showPassModal, setShowPassModal] = useState(false);
+  const [passModalType, setPassModalType] = useState('');
+  const fp = useMemo(() => getFingerprint(), []);
+  useEffect(() => { localStorage.setItem('refs', referrals); }, [referrals]);
+
+  const handleNameConfirm = (name) => {
+    localStorage.setItem('user_name', name);
+    setUserName(name);
+  };
+
+  useEffect(() => {
+    if (!userName) return;
+    const init = async () => {
+      const { data: profile } = await supabaseClient.from('visitors').upsert({ fingerprint: fp, display_name: userName, last_seen: new Date().toISOString(), ip: 'LOGGED' }, { onConflict: 'fingerprint' }).select().single();
+      if(profile && profile.banned) setBanned(true);
+      if(profile && profile.worker_blocked) setWorkerBlocked(true);
+      const { data: stats } = await supabaseClient.from('stats').select('redeemed_count').single();
+      if(stats) setRedeemedCount(stats.redeemed_count);
+    };
+    init();
+    const sub = supabaseClient.channel('global_stats').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'stats' }, p => setRedeemedCount(p.new.redeemed_count)).subscribe();
+    return () => sub.unsubscribe();
+  }, [fp, userName]);
+  const addToast = (msg, type = 'success') => {
+    const id = Date.now();
+    setToasts(curr => [...curr, { id, msg, type }]);
+    setTimeout(() => setToasts(curr => curr.filter(t => t.id !== id)), 3000);
+  };
+  const handlePassSuccess = async () => {
+    if (passModalType === 'admin') {
+      setAdmin(true);
+    } else {
+      if (workerBlocked) { addToast('YOUR WORKER ACCESS HAS BEEN REVOKED', 'error'); return; }
+      // Auto-tag this device as a worker
+      await supabaseClient.from('visitors').update({ is_worker: true }).eq('fingerprint', fp);
+      setWorkerView(true);
+    }
+  };
+  const handleProofUpload = () => {
+    setScanning(true);
+    setTimeout(() => { setScanning(false); setReferrals(p => p + 1); addToast("REFERRAL VERIFIED +1"); }, 3000);
+  };
+  useEffect(() => {
+    const hk = (e) => { if(e.ctrlKey && e.shiftKey && e.key === 'A') setAdmin(p => !p); };
+    window.addEventListener('keydown', hk);
+    return () => window.removeEventListener('keydown', hk);
+  }, []);
+
+  if (!userName) return <NameGate onConfirm={handleNameConfirm} />;
+  if(banned) return <div className="min-h-screen flex items-center justify-center bg-black text-red-500 font-black italic">ACCESS DENIED</div>;
+  return (
+    <div className="min-h-screen max-w-lg mx-auto px-6 py-12 relative pb-64">
+      <header className="flex items-center justify-between mb-12">
+        <div className="flex items-center gap-4"><div className="w-14 h-14 rounded-[22px] bg-cyan-glow flex items-center justify-center text-black font-black font-outfit text-3xl shadow-[0_0_30px_rgba(0,245,255,0.5)]">S</div><div><h1 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">SafeRobux</h1><p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mt-1">MASTER ELITE</p></div></div>
+        <div className="flex flex-col items-end gap-1"><div className="flex items-center gap-2 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20"><div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div><span className="text-[9px] font-black text-green-500 uppercase">ONLINE</span></div><span className="text-[9px] font-black text-slate-600 uppercase tracking-wide">{userName}</span></div>
+      </header>
+      <nav className="flex justify-center mb-12 sticky top-8 z-50">
+        <div className="capsule-tabs flex gap-1 bg-black/60 shadow-2xl">
+          {[{ id: 'shop', label: 'Shop' }, { id: 'howto', label: 'Guide' }, { id: 'report', label: 'Safety' }, { id: 'vip', label: 'VIP' }].map(t => (
+            <button key={t.id} onClick={() => setView(t.id)} className={`capsule-btn ${view === t.id ? 'active' : 'text-slate-500'}`}>{t.label}</button>
+          ))}
+        </div>
+      </nav>
+      <main>
+        {view === 'shop' && <Shop customAmount={customAmount} setCustomAmount={setCustomAmount} WA_PHONE={WA_PHONE} />}
+        {view === 'howto' && <HowTo />}
+        {view === 'report' && <Report fp={fp} addToast={addToast} />}
+        {view === 'vip' && <VIPDashboard referrals={referrals} redeemedCount={redeemedCount} showVipBriefing={showVipBriefing} setShowVipBriefing={setShowVipBriefing} scanning={scanning} handleProofUpload={handleProofUpload} addToast={addToast} />}
+      </main>
+      <button onClick={() => setView('vip')} className="fixed bottom-[80px] left-6 z-[60] py-4 px-6 bg-gold-glow rounded-[28px] text-black shadow-2xl animate-pulse-gold flex items-center gap-3 active:scale-95 transition-all group">
+        <svg className="w-6 h-6 group-hover:rotate-12 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+        <span className="text-[11px] font-black uppercase tracking-widest">VIP REWARD</span>
+      </button>
+      <button onClick={() => window.open(`https://wa.me/${WA_PHONE}`)} className="fixed bottom-[80px] right-6 z-[60] bg-green-500 py-5 px-6 rounded-[28px] text-white shadow-2xl active:scale-95 flex items-center gap-3 group">
+        <svg className="w-6 h-6 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 11-7.6-11.7 8.38 8.38 0 013.8.9L21 3z"/></svg>
+        <span className="text-[11px] font-black uppercase tracking-widest">SUPPORT</span>
+      </button>
+      <div className="fixed top-24 left-6 right-6 z-[110] flex flex-col gap-2 pointer-events-none">
+        {toasts.map(t => (
+          <div key={t.id} className={`glass px-6 py-5 rounded-[28px] flex items-center gap-4 border shadow-2xl animate-in slide-in-from-top-6 duration-500 ${t.type === 'error' ? 'border-red-500/40 bg-red-500/5' : 'border-cyan-500/40 bg-cyan-500/5'}`}>
+             <div className={t.type === 'error' ? 'text-red-500' : 'text-cyan-400'}>{"●"}</div>
+             <span className="text-xs font-black text-white uppercase tracking-tighter italic">{t.msg}</span>
+          </div>
+        ))}
+      </div>
+      {/* BOTTOM ACTION BUTTONS */}
+      <div className="mt-16 flex flex-col items-center gap-4 relative z-[70]">
+        <div className="flex gap-4">
+          <button 
+            onClick={() => {
+              setPassModalType('admin');
+              setShowPassModal(true);
+            }} 
+            className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all border border-white/5 active:scale-95"
+          >
+            Admin
+          </button>
+          <button 
+            onClick={() => {
+              setPassModalType('worker');
+              setShowPassModal(true);
+            }} 
+            className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all border border-white/5 active:scale-95"
+          >
+            Workers
+          </button>
+        </div>
+        <button 
+          onClick={() => addToast("I'm looking for hire. Whatsapp me to register for hire.", "info")}
+          className="px-8 py-3 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400 transition-all border border-cyan-500/20 active:scale-95"
+        >
+          For Hire
+        </button>
+      </div>
+
+      {showPassModal && (
+        <PasswordModal 
+          type={passModalType} 
+          onClose={() => setShowPassModal(false)} 
+          onSuccess={handlePassSuccess}
+          addToast={addToast}
+        />
+      )}
+
+      {admin && <AdminPanel fp={fp} addToast={addToast} setAdmin={setAdmin} />}
+      {workerView && <WorkerPanel fp={fp} addToast={addToast} setWorkerView={setWorkerView} />}
+      <AssistLoop />
+      <footer className="mt-32 text-center opacity-20"><p className="text-[9px] font-black uppercase tracking-[0.4em]">MASTER ELITE EDITION</p></footer>
+
+    </div>
+  );
+};
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
